@@ -1,0 +1,103 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<form asp-action="UploadImage" asp-controller="Upload" method="post" enctype="multipart/form-data" class="dropzone dropzone-design dz-clickable form-horizontal form-bordered" id="dropzoneForm" asp-antiforgery="true">
+    <div class="form-group form-actions">
+        <div class="col-md-9 col-md-offset-4">
+            <button type="submit" id="submit" class="btn btn-sm btn-primary"><i class="fa fa-floppy-o"></i> Upload</button>
+        </div>
+    </div>
+</form>
+
+<form class="form-group">
+    <label class="col-form-label">Files Name : </label>
+    <input type="text" id="imagesNames" value="" class="form-control" />
+</form>
+
+
+
+@section Scripts{
+    <script>
+        //list for save file names both client and server side
+        var fileList = new Array;
+        var i = 0;
+
+        function myParamName() {
+            return "files";
+        }
+
+        //GUID in javascript
+        function uuidv4() {
+            return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
+                (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
+            );
+        }
+
+        Dropzone.options.dropzoneForm = {
+            autoProcessQueue: false,
+            paramName: myParamName, // The name that will be used to transfer the file
+            uploadMultiple: true,
+            addRemoveLinks: true,
+            acceptedFiles: 'image/*',
+            renameFilename: function (filename) {
+                return uuidv4() + filename;
+            },
+            parallelUploads: 100,
+            init: function () {
+                var wrapperThis = this;
+                //submit (upload) button for upload images
+                $("#submit").click(function (e) {
+                    e.preventDefault();
+                    wrapperThis.processQueue();
+                });
+                //after images are upload : =>
+                this.on("success", function (data) {
+                    var response = $.parseJSON(data.xhr.response);
+                    $('#imagesNames').val(response);
+                    fileList[i] = { "serverFileName": JSON.parse(response)[i], "fileName": data.name, "fileId": i };
+                    i++;
+                });
+            },
+            accept: function (file, done) {
+                done();
+            },
+            //after images are remove
+            removedfile: function (file) {
+                //check file name both server and client side
+                var rmvFile = "";
+                for (f = 0; f < fileList.length; f++) {
+
+                    if (fileList[f].fileName == file.name) {
+                        rmvFile = fileList[f].serverFileName;
+
+                    }
+
+                }
+                //if file exist send the request to the server
+                if (rmvFile) {
+                    $.ajax({
+                        type: 'POST',
+                        headers: {
+                            'RequestVerificationToken': $("input[name=__RequestVerificationToken]").val()
+                        },
+                        url: '/Upload/DeleteUploadedImage',
+                        data: "fileName=" + rmvFile,
+                        dataType: 'html'
+                    });
+                }
+
+                //update fileNames input
+                var newFilesName = $('#imagesNames').val();
+                newFilesName = newFilesName.replace(rmvFile, '');
+                $('#imagesNames').val(newFilesName);
+
+                var _ref;
+                return (_ref = file.previewElement) != null ? _ref.parentNode.removeChild(file.previewElement) : void 0;
+            }
+        };
+
+    </script>
+}
