@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
@@ -35,7 +34,7 @@ namespace DropzoneJSNetCore.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UploadImage(ICollection<IFormFile> files)
         {
-            var imagesList = new List<string>();
+            List<string> imagesList = new List<string>();
             if (!Directory.Exists(Path.Combine(_env.ContentRootPath, "wwwroot", "images")))
             {
                 Directory.CreateDirectory(Path.Combine(_env.ContentRootPath, "wwwroot", "images"));
